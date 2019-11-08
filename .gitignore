@@ -1,0 +1,4 @@
+*.o
+build/apps
+build/objects
+
