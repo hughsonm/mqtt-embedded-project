@@ -1,16 +1,12 @@
 CXX      := -c++
 CXXFLAGS := -Wall
-LDFLAGS  := -L/usr/lib -lstdc++ -lm -lpaho-mqttpp3
+LDFLAGS  := -L/usr/lib -L/usr/local/lib -lpaho-mqttpp3 -lpaho-mqtt3as -lstdc++ -lm 
 BUILD    := ./build
 OBJ_DIR  := $(BUILD)/objects
 APP_DIR  := $(BUILD)/apps
 TARGET   := program
 INCLUDE  := -Iinclude/
-SRC      :=                      \
-   $(wildcard src/module1/*.cpp) \
-   $(wildcard src/module2/*.cpp) \
-   $(wildcard src/module3/*.cpp) \
-   $(wildcard src/*.cpp)         \
+SRC      := $(wildcard src/*.cpp)
 
 OBJECTS := $(SRC:%.cpp=$(OBJ_DIR)/%.o)
 
