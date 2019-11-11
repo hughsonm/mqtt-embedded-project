@@ -1,4 +1,4 @@
 *.o
-build/apps
-build/objects
+Reader/build/apps
+Sensor/build/objects
 
