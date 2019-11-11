@@ -4,7 +4,7 @@ LDFLAGS  := -L/usr/lib -L/usr/local/lib -lpaho-mqttpp3 -lpaho-mqtt3as -lstdc++ -
 BUILD    := ./build
 OBJ_DIR  := $(BUILD)/objects
 APP_DIR  := $(BUILD)/apps
-TARGET   := program
+TARGET   := sensor
 INCLUDE  := -Iinclude/
 SRC      := $(wildcard src/*.cpp)
 
