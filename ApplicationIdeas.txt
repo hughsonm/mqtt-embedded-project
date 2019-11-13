@@ -1,1 +1,2 @@
 The reader could be connected to a solenoid valve that dispenses beer.
+The sensor could be something to do with grain. The sensor could measure when a door is open, and the reader could disable some machinery.
