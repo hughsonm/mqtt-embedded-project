@@ -19,6 +19,7 @@ class callback : public virtual mqtt::callback{
 int main(int argc,char** argv){
 	std::cout << "Running..." << std::endl;
 
+
 	std::cout << "Constructing client..." << std::endl;
 	mqtt::async_client cl(broker_address,"hughsonPiReader");
 	callback cb;

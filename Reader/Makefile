@@ -1,6 +1,6 @@
 CXX      := -c++
 CXXFLAGS := -Wall
-LDFLAGS  := -L/usr/lib -L/usr/local/lib -lpaho-mqttpp3 -lpaho-mqtt3as -lstdc++ -lm 
+LDFLAGS  := -L/usr/lib -L/usr/local/lib -lpaho-mqttpp3 -lpaho-mqtt3as -lstdc++ -lm -lcrypto
 BUILD    := ./build
 OBJ_DIR  := $(BUILD)/objects
 APP_DIR  := $(BUILD)/apps
