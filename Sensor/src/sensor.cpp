@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <vector>
 #include <mqtt/async_client.h>
 #include <mqtt/topic.h>
@@ -12,7 +13,7 @@ std::vector<std::vector<unsigned char> > make_AES_blocks(
 ){
 	std::vector<std::vector<unsigned char> > blocks;
 	std::vector<unsigned char> block(AES_BLOCK_SIZE);
-	for(auto ii{0}; ii<source.size();++ii){
+	for(std::size_t ii{0}; ii<source.size();++ii){
 		auto block_ptr{ii%block.size()};
 		block[block_ptr] = source[ii];
 		if((block_ptr+1)==block.size()){
@@ -33,7 +34,7 @@ std::string encrypt_string_AES(
 	keygen.resize(AES_BLOCK_SIZE);
 	
 	unsigned char uc_key[AES_BLOCK_SIZE];
-	for(auto ii{0}; ii<keygen.size();++ii){
+	for(std::size_t ii{0}; ii<keygen.size();++ii){
 		uc_key[ii] = (unsigned char)keygen[ii];
 	}
 	
@@ -70,7 +71,7 @@ std::string decrypt_string_AES(
 	keygen.resize(AES_BLOCK_SIZE);
 	
 	unsigned char uc_key[AES_BLOCK_SIZE];
-	for(auto ii{0}; ii<keygen.size();++ii){
+	for(std::size_t ii{0}; ii<keygen.size();++ii){
 		uc_key[ii] = (unsigned char)keygen[ii];
 	}
 	
@@ -100,8 +101,19 @@ std::string decrypt_string_AES(
 }
 
 const std::string broker_address{"130.179.196.54:1883"};
+const std::string keygen_filename{"~/aes_key_gen.txt"};
+const std::string raw_topic{"maxtopic/periodic/collatz"};
+
 
 int main(int argc,char** argv){
+	
+	std::ifstream reader;
+	reader.open(keygen_filename,std::ifstream::in);
+	std::string keygen;
+	reader >> keygen;
+	reader.close();
+	
+	const std::string enc_topic{encrypt_string_AES(keygen,raw_topic)};
 	
 	std::cout << "Running..." << std::endl;
 	
@@ -121,7 +133,7 @@ int main(int argc,char** argv){
 	std::cout << std::endl;
 	
 	// Every T seconds, publish a message to maxtopic/periodic/collatz
-	mqtt::topic top(cl,"maxtopic/periodic/collatz");
+	mqtt::topic top(cl,enc_topic);
 	int nn{2};
 	int ii{nn};
 	auto t_i{std::chrono::steady_clock::now()};
@@ -143,7 +155,15 @@ int main(int argc,char** argv){
 				}
 			}
 			std::cout << ii << std::endl;
-			top.publish(std::move(std::to_string(ii)));
+			const std::string enc_ii{
+				encrypt_string_AES(
+					keygen,
+					std::to_string(ii)
+				)
+			};
+			top.publish(
+				std::move(std::to_string(ii))
+			);
 		}
 	}
 	
