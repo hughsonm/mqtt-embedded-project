@@ -1,4 +1,9 @@
+*.DS_Store
 *.o
+*.log
+*.aux
+*.pdf
+*.gz
+*.zip
 Reader/build/apps
-Sensor/build/objects
-
+Sensor/build/apps
