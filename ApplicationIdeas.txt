@@ -1,0 +1,7 @@
+The reader could be connected to a solenoid valve that dispenses beer.
+The sensor could be something to do with grain. The sensor could measure when a door is open, and the reader could disable some machinery.
+Joe suggested a chemical sensor that lives in the bin.
+Sensor could look at a beer line at send a message when beer is moving.
+Encryption should probably be symmetric, with the key hardcoded at the 'factory'.
+I should encrypt topics as well as payloads.
+
