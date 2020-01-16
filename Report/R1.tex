@@ -118,15 +118,84 @@ Secure MQTT}
 
 \section{Introduction}
 
+For my project, I wanted to explore security in distributed, embedded systems. To that end, I focused on making my  mqtt-thing secure. 
+
+I've divided my project into two systems: the \emph{sensor}, and the \emph{reader}. The sensor interfaces with the outside world to measure something, and sends periodic messages to the MQTT broker. The reader receives asynchronous messages from the broker, and acts on the data.
+
 \section{Sensor Description}
+I'm just going to make up sensor readings. Make a Sensor class and make a method to get a reading. Same thing for the reader. Make it light up an LED, or something easy.
 
 \section{Reader Description}
 
 \section{Encryption Technique}
-\subsection{AES Implementation}
-\subsection{Program Code}
+
+There are many ways to make an embedded system secure, and many technologies available. I encrypt messages such that I do not care about the security of the network. I want my sensors and readers to communicate in the open, with everybody listening, with only authorized nodes being able to listen to the messages.
+
+I considered two methods for encrypting messages over public channels: \textbf{public key encryption}, and \textbf{symmetric key encryption}.
+
+\textbf{Public Key}
+\begin{itemize}
+	\item Each communication channel needs 4 keys(public and private for each side)
+	\item Each sensor has a key-pair
+	\item Each reader has a key-pair
+	\item The broker sees only encrypted messages
+	\item How would you authorize new devices, or set up new channels?
+	\item Each node's knowledge of the other nodes (their names and keys) would need to come from a trusted master node.
+	\item Need to keep track of many keys
+\end{itemize}
+
+\textbf{Symmetric Key}
+\begin{itemize}
+	\item Only need one key
+	\item Each unit is programmed at the factory with the master key
+	\item Each sensor and reader has the same key.
+\end{itemize}
+
+I decided to go with symmetric key encryption because it is simpler to implement. Each device would be programmed at the factory with the communication key. This way, the manufacturer can trust that only authorized devices will be allowed to communicate on the network.
+
+There's another drawback to public key encryption! Suppose I'm sending a message to you. Public key encryption requires that I lock my message with my private key and with your public key. That means that if I want to broadcast a reading, then I need to send a unique message to \emph{each} recipient. That is totally antithetical to the publish-subscribe model.
+
+\textcolor{red}{I should probably change it such that the key generator is just a sequence of 16 bytes, not a string.}
+
+
+\subsection{Implementation}
+I used the \texttt{openssl} implementation of the \href{https://www.youtube.com/watch?v=O4xNJsjtN6E}{advanced encryption standard} (AES). This is a widely-used technology that enables fast symmetric key encryption.
+
+In the AES algorithm, data are encrypted as a matrix of bytes. For my implementation, I chose to use 128-bit AES, so I use a 4-by-4 matrix of bytes. 
+
+128-bit encryption uses 9 rounds. Start by xoring the data matrix with the round key matrix.
+
+\begin{enumerate}
+	\item Replace each byte of the data matrix with a code-byte from a look-up table
+	\item Rotate each row of the data matrix by a different amount
+	\item Multiply the data matrix by a mixing matrix
+	\item Modify the round key
+	\item Xor the data matrix with the round key matrix
+	\item Repeat
+\end{enumerate}
+
+The topics and the payloads are encrypted.
+
 \subsection{Pitfalls}
 
+This technique has a single point of failure: the shared encryption key. If a nefarious agent opens up the mqtt-thing and finds out the encryption key, then the whole system is compromised. If we communicate on a busy broker, then it may be difficult to know which messages are ours. If he has hacked into the box deep enough to find the key, then he probably also knows the topic names. This could possibly be prevented by using tamper-detection that kills any molested units. If a hacker manages to extract the key before the self-destruct engages, though, then he has the secret forever.
 
+A better way to do this would be to use occasional public key encryption to periodically update the shared encryption key. Occasionally, the key master could send out a directed message to \emph{every} unit that has left the factory, encrypted with the master's private key and the units' public keys, containing a new shared key. Then, even if a hacker gets a key from a unit, it would only last a short while.
+
+\newpage
+\appendix
+\section{Program Code}
+
+Sensor Code:
+\lstset{style=Cpp}
+\lstinputlisting{../Sensor/src/sensor.cpp}
+
+Reader Code:
+\lstset{style=Cpp}
+\lstinputlisting{../Reader/src/reader.cpp}
+
+Cryptographic Code:
+\lstset{style=Cpp}
+\lstinputlisting{../Sensor/src/crypt.cpp}
 
 \end{document}
