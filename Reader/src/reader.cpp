@@ -9,14 +9,14 @@
 #include "crypt.h"
 
 const std::string broker_address{"130.179.196.54:1883"};
-const std::string keygen_filename{"~/aes_key_gen.txt"};
+const std::string keygen_filename{"/home/pi/aes_key_gen.txt"};
 const std::string raw_topic{"maxtopic/periodic/collatz"};
 
 
 class callback : public virtual mqtt::callback{
 	std::string _kg;
 	void message_arrived(mqtt::const_message_ptr msg) override {
-		std::cout << "Message arrived" << std::endl;
+		std::cout << "Message arrived\n";
 		std::cout << "\ttopic:\t'" << msg->get_topic() << "'\n";
 		const std::string enc_payload{msg->to_string()};
 		std::cout << "\tpayload:\t'" << enc_payload << "'\n";
@@ -42,18 +42,17 @@ int main(int argc,char** argv){
 		encrypt_topic_AES(keygen,"hughson",raw_topic)
 	};
 	
-	std::cout << "Running..." << std::endl;
-	std::cout << "Constructing client..." << std::endl;
+	std::cout << "Running...\n";
+	std::cout << "Constructing client...\n";
 	mqtt::async_client cl(broker_address,"hpReader");
 	callback cb(keygen);
 	cl.set_callback(cb);
 	
-	std::cout << "Connecting client..." << std::endl;
+	std::cout << "Connecting client...\n";
 	cl.connect();
 	while(not(cl.is_connected()));
-	std::cout << "Connected!" << std::endl;
+	std::cout << "Connected!\n";
 
-	//mqtt::topic top(cl,"maxtopic/periodic/collatz");
 	std::cout << "Listening to topic " << enc_topic << "\n";
 	cl.subscribe(enc_topic,1);
 		
@@ -63,8 +62,6 @@ int main(int argc,char** argv){
 	cl.disconnect();
 	while(cl.is_connected()) std::cout << ".";
 	std::cout << std::endl;
-	
-	
-	
+		
 	return(0);
 }

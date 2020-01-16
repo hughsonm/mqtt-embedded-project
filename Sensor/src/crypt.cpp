@@ -24,8 +24,6 @@ std::vector<std::vector<unsigned char> > make_AES_blocks(
 	return(blocks);		
 }
 
-
-
 std::string encrypt_string_AES(
 	std::string keygen,
 	std::string input
@@ -55,11 +53,11 @@ std::string encrypt_string_AES(
 		AES_encrypt(&block[0],crypt_output,&key);
 		std::string crypt_string;
 		crypt_string.resize(AES_BLOCK_SIZE);
-		for(auto ic{0}; ic<AES_BLOCK_SIZE; ++ic)
+		for(auto ic{0}; ic<AES_BLOCK_SIZE; ++ic){
 			crypt_string[ic] = crypt_output[ic];
+		}
 		scrambled += crypt_string;
 	}
-	
 	std::string outstr;
 	for(const auto& cc : scrambled){
 		outstr += std::to_string((int)cc) + " ";
@@ -69,37 +67,6 @@ std::string encrypt_string_AES(
 	return(outstr);
 }
 
-std::string encrypt_topic_AES(
-	std::string keygen,
-	std::string topic_prefix,
-	std::string topic_suffix
-){
-	std::string enc_suffix{
-		encrypt_string_AES(keygen,topic_suffix)
-	};
-	
-	std::cout << enc_suffix << "\n";
-	enc_suffix.erase(
-		std::remove_if(
-			enc_suffix.begin(),
-			enc_suffix.end(),
-			[&] (char x)->bool{
-				return(x==' ');
-			}
-		),
-		enc_suffix.end()
-	);
-	std::cout << enc_suffix << "\n";
-	
-	if(not((topic_prefix.back()=='\\')or(topic_prefix.back()=='/'))){
-		topic_prefix += "/";
-	}
-	
-	const std::string topic_full{topic_prefix + enc_suffix};
-	return(topic_full);
-	
-	
-}
 
 std::string decrypt_string_AES(
 	std::string keygen,
@@ -128,21 +95,19 @@ std::string decrypt_string_AES(
 		instream >> coded_num;
 		scrambled_nums.push_back((unsigned char)coded_num);		
 	}
-	for(auto & nn : scrambled_nums) std::cout << (int)nn << ",";
-	std::cout << "\n";
-	std::cout << "scrambled nums has " << scrambled_nums.size() << " nums\n";
+	
 	assert((scrambled_nums.size()%AES_BLOCK_SIZE)==0);
 	
 	std::vector<std::vector<unsigned char> > scrambled_blocks;
 	std::vector<unsigned char> block;
 	for(const auto& n : scrambled_nums){
-		auto bs{block.size()};
-		if(((bs+1)%AES_BLOCK_SIZE)==0){
+		block.push_back(n);
+		if(block.size()==AES_BLOCK_SIZE){
 			scrambled_blocks.push_back(block);
 			block.resize(0);
 		}
-		block.push_back(n);
 	}
+
 	std::string outstr;
 	for(const auto& block : scrambled_blocks){
 		unsigned char crypt_output[AES_BLOCK_SIZE];
@@ -154,4 +119,32 @@ std::string decrypt_string_AES(
 		outstr += crypt_string;
 	}	
 	return(outstr);	
+}
+
+std::string encrypt_topic_AES(
+	std::string keygen,
+	std::string topic_prefix,
+	std::string topic_suffix
+){
+	std::string enc_suffix{
+		encrypt_string_AES(keygen,topic_suffix)
+	};
+	
+	enc_suffix.erase(
+		std::remove_if(
+			enc_suffix.begin(),
+			enc_suffix.end(),
+			[&] (char x)->bool{
+				return(x==' ');
+			}
+		),
+		enc_suffix.end()
+	);
+	
+	if(not((topic_prefix.back()=='\\')or(topic_prefix.back()=='/'))){
+		topic_prefix += "/";
+	}
+	
+	const std::string topic_full{topic_prefix + enc_suffix};
+	return(topic_full);
 }
