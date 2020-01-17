@@ -71,8 +71,7 @@ std::string encrypt_string_AES(
 std::string decrypt_string_AES(
 	std::string keygen,
 	std::string inseq
-){
-	
+){	
 	AES_KEY key;
 	keygen.resize(AES_BLOCK_SIZE);
 	

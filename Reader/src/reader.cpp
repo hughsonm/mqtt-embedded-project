@@ -8,11 +8,6 @@
 #include <fstream>
 #include "crypt.h"
 
-const std::string broker_address{"130.179.196.54:1883"};
-const std::string keygen_filename{"/home/pi/aes_key_gen.txt"};
-const std::string raw_topic{"maxtopic/periodic/collatz"};
-
-
 class callback : public virtual mqtt::callback{
 	std::string _kg;
 	void message_arrived(mqtt::const_message_ptr msg) override {
@@ -29,6 +24,9 @@ public:
 	callback(std::string kg){_kg = kg;};
 };
 
+const std::string broker_address{"130.179.196.54:1883"};
+const std::string keygen_filename{"/home/pi/aes_key_gen.txt"};
+const std::string raw_topic{"maxtopic/periodic/secret"};
 
 int main(int argc,char** argv){
 	

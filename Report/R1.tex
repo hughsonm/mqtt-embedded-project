@@ -6,14 +6,13 @@
 \usepackage[final]{hyperref}
 \usepackage[section]{placeins}
 \usepackage{titlepic}
-\usepackage{forloop}
 \usepackage{listings}
 \usepackage{xcolor}
-\usepackage[export]{adjustbox}
+%\usepackage[export]{adjustbox}
 \usepackage{url}
 \usepackage{titlepic}
-\usepackage{tikz}
-\usetikzlibrary{shapes.geometric, arrows}
+%\usepackage{tikz}
+%\usetikzlibrary{shapes.geometric, arrows}
 \usepackage{siunitx}
 
 
@@ -107,7 +106,20 @@ Secure MQTT}
 \newcommand{\delsqbyddel}[3]{\frac{\partial^2 #1}{\partial #2 \partial #3}}
 \newcommand{\threevec}[1]{\begin{bmatrix}#1_x\\#1_y\\#1_z\end{bmatrix}}
 
+
+% Things I need to add to this document:
+% Mention PAHO and the API
+% More AES description
+% Explanation that I did not do any breadboard stuff at all.
+% Outputs from the terminal of my reader decrypting messages successfully.
+% Some nice google drawings that show my system architecture.
+
+
+
+
 \begin{document}
+
+
 
 \maketitle
 
@@ -118,53 +130,64 @@ Secure MQTT}
 
 \section{Introduction}
 
-For my project, I wanted to explore security in distributed, embedded systems. To that end, I focused on making my  mqtt-thing secure. 
+The MQTT architecture is a handy tool for managing distributed, embedded systems. A single, central \emph{broker} controls communication for the whole network. Nodes called \emph{clients} can publish messages to the broker, and receive messages from the broker. The broker routes the messages based on \emph{topics}. Each published message must be attached to some topic. The clients can choose to subscribe to certain topics, so that the broker will send them any messages that fall under that topic.
 
-I've divided my project into two systems: the \emph{sensor}, and the \emph{reader}. The sensor interfaces with the outside world to measure something, and sends periodic messages to the MQTT broker. The reader receives asynchronous messages from the broker, and acts on the data.
+On the surface, this seems like a very open communication method. Every client with information to share gives the information to the broker, who hands it out to any client who requests the information. There are further security measures in the MQTT standard that can increase security, such as password protection. For my project, however, I chose to eschew these measures, and built some security measures \emph{on top of} an MQTT network.
+
+I've created a method of encrypting MQTT communication such that messages can be passed on a public network while their contents are hidden. 
+
+I've divided my project into two systems: the \emph{sensor}, and the \emph{reader}. The sensor has information that it want to send to authorized readers. The readers receive the sender's information, and act on the information.
 
 \section{Sensor Description}
-I'm just going to make up sensor readings. Make a Sensor class and make a method to get a reading. Same thing for the reader. Make it light up an LED, or something easy.
+The sensor periodically gets a reading from some measurement device. That information is then encrypted, and sent to the broker. The main code for my sensor is the following:
+\lstset{style=Cpp}
+\lstinputlisting[firstline=35]{../Sensor/src/sensor.cpp}
+
+There is no actual sensor in my implementation -- I just spoofed a sensor and spent all my energy on the encryption. Here's the code for my sensor class, anyway:
+\lstset{style=Cpp}
+\lstinputlisting[firstline=12,lastline=32]{../Sensor/src/sensor.cpp}
+The sensor is a digital resonator, which outputs a sampled, damped sinusoid. Every 100 readings, I kick the resonator so it doesn't peter out completely.
 
 \section{Reader Description}
+The reader sets up a client, and subscribes to the topic under which the sender publishes its information. The reader code is the following:
+\lstset{style=Cpp}
+\lstinputlisting[firstline=27,lastline=65]{../Reader/src/sensor.cpp}
+Messages are received asynchronously. When a message is received, the message is decrypted to get at the juicy information from the sensor.
+
+\section{Eclipse Paho Libraries}
+My applications use Eclipse's \href{https://github.com/eclipse/paho.mqtt.cpp}{Paho MQTT C++ Client Library}. This library made it very easy to get an mqtt client up and running. Their API is pretty well-documented. I think it's clear from my application code that the Paho library does a good job of hiding the complexity from the user. 
 
 \section{Encryption Technique}
 
-There are many ways to make an embedded system secure, and many technologies available. I encrypt messages such that I do not care about the security of the network. I want my sensors and readers to communicate in the open, with everybody listening, with only authorized nodes being able to listen to the messages.
+There are many ways to make an embedded system secure, and many technologies available. I encrypt messages such that I do not care about the security of the network. I want my sensors and readers to communicate in the open, with everybody listening, with only authorized nodes being able to understand the messages.
 
-I considered two methods for encrypting messages over public channels: \textbf{public key encryption}, and \textbf{symmetric key encryption}.
+I considered two methods for encrypting messages over public channels: \textbf{public key encryption}, and \textbf{symmetric key encryption}. The key aspects of each technique are as follows:
 
-\textbf{Public Key}
+\paragraph{Public Key Encryption}
 \begin{itemize}
-	\item Each communication channel needs 4 keys(public and private for each side)
-	\item Each sensor has a key-pair
-	\item Each reader has a key-pair
-	\item The broker sees only encrypted messages
-	\item How would you authorize new devices, or set up new channels?
-	\item Each node's knowledge of the other nodes (their names and keys) would need to come from a trusted master node.
-	\item Need to keep track of many keys
+	\item Each communicator has a public and private key.
+	\item Signing with one key inverts the act of signing with the other key.
+	\item Senders can verify their messages by signing with their private key.
+	\item Senders can secure a message by signing it with their private key and the receiver's public key.
 \end{itemize}
 
-\textbf{Symmetric Key}
+\paragraph{Symmetric Key Encryption}
 \begin{itemize}
-	\item Only need one key
-	\item Each unit is programmed at the factory with the master key
-	\item Each sensor and reader has the same key.
+	\item Each communicator has a copy of the shared key.
+	\item The one key is used for encryption and decryption.
+	\item Senders can secure a message by signing it with the shared key.
 \end{itemize}
 
-I decided to go with symmetric key encryption because it is simpler to implement. Each device would be programmed at the factory with the communication key. This way, the manufacturer can trust that only authorized devices will be allowed to communicate on the network.
+Public key encryption would be unsuitable for a publish-and-subscribe model, such as MQTT. In the MQTT framework, a sender is not aware of all the clients that would like to read its data. The sender publishes its data once, then moves on to other tasks. In order to implement public key encryption over an MQTT network, the sender would need to send out a unique message for each of the clients that want to read its data. Sinc the sender does not normally have knowledge of its audience, this would be unpleasant to implement.
 
-There's another drawback to public key encryption! Suppose I'm sending a message to you. Public key encryption requires that I lock my message with my private key and with your public key. That means that if I want to broadcast a reading, then I need to send a unique message to \emph{each} recipient. That is totally antithetical to the publish-subscribe model.
+Therefore, I decided to go with symmetric key encryption. Symmetric key encryption has the added benefit of being simpler to implement. Each device is programmed with the communication key. A data-thief would be unable to steal my data because the thief does not know my encryption key.
 
-\textcolor{red}{I should probably change it such that the key generator is just a sequence of 16 bytes, not a string.}
-
+In my system, the key is generated from a 32-character word, stored in a  text file, located at \texttt{/home/pi/aes\_key\_gen.txt}. 
 
 \subsection{Implementation}
 I used the \texttt{openssl} implementation of the \href{https://www.youtube.com/watch?v=O4xNJsjtN6E}{advanced encryption standard} (AES). This is a widely-used technology that enables fast symmetric key encryption.
 
-In the AES algorithm, data are encrypted as a matrix of bytes. For my implementation, I chose to use 128-bit AES, so I use a 4-by-4 matrix of bytes. 
-
-128-bit encryption uses 9 rounds. Start by xoring the data matrix with the round key matrix.
-
+In the AES algorithm, data are encrypted as a matrix of bytes. For my implementation, I chose to use 128-bit AES, so I use a 4-by-4 matrix of bytes. In a nutshell, AES encrypts data by performing the following procedure:
 \begin{enumerate}
 	\item Replace each byte of the data matrix with a code-byte from a look-up table
 	\item Rotate each row of the data matrix by a different amount
@@ -174,28 +197,28 @@ In the AES algorithm, data are encrypted as a matrix of bytes. For my implementa
 	\item Repeat
 \end{enumerate}
 
-The topics and the payloads are encrypted.
+The input to my encryption machine is a string, and the output from my encryption machine is another string. AES only works on 128-bit chunks of data. I treat my strings as arrays of 8-bit characters.  In order to encrypt variable-length strings, I simply pad the strings with spaces, cut the string into 128-bit blocks, and encrypt each 128-bit block in parallel. In this form, the characters \emph{cannot} be cast back into a string, because their values are not related to ASCII representations of anything. Instead, I create a string from each encrypted byte (i.e. the number \texttt{123} becomes \textt{"123"}). Then, I join all those strings, separated by spaces, to produce the encrypted string. This is a naive method of performing large-scale AES encryption. A more secure method would be to encrypt in series, with the output from each step influencing the next step.
+
+My payloads and my topics are both encrypted. The payloads are obviously encrypted so that their information is hidden. The topics are encrypted because they could also carry important information about my messages. The technique for encrypting topics is slightly different from the technique described above. This is because I was running into trouble getting a simple sequence of integers to be a MQTT topic. The form of my MQTT topics is: \texttt{<plaintext prefix>/<encrypted topic with spaces removed>}. From my application code, my topic would be \texttt{hughson/1198288193107892161194291892457610421781451311711362472251261593215422920320414874158}. My encryption code is show below:
+\lstset{style=Cpp}
+\lstinputlisting{../Sensor/src/crypt.cpp}
+
+\section{Sample Outputs}
+
+Here are some terminal outputs taken while both the sensor and reader applications were running on my raspberry pi, on my home network. The sensor is periodically producing measurements, encrypting them, and publishing them to the broker. When an message gets published, the broker sends the meassage to the reader, who decrypts the message and displays the reading.
+
+\begin{center}Sensor\end{center}
+\lstset{style=None}
+\lstinputlisting{SensorSample.txt}
+
+\begin{center}Reader\end{center}
+\lstset{style=None}
+\lstinputlisting{ReaderSample.txt}
 
 \subsection{Pitfalls}
 
 This technique has a single point of failure: the shared encryption key. If a nefarious agent opens up the mqtt-thing and finds out the encryption key, then the whole system is compromised. If we communicate on a busy broker, then it may be difficult to know which messages are ours. If he has hacked into the box deep enough to find the key, then he probably also knows the topic names. This could possibly be prevented by using tamper-detection that kills any molested units. If a hacker manages to extract the key before the self-destruct engages, though, then he has the secret forever.
 
 A better way to do this would be to use occasional public key encryption to periodically update the shared encryption key. Occasionally, the key master could send out a directed message to \emph{every} unit that has left the factory, encrypted with the master's private key and the units' public keys, containing a new shared key. Then, even if a hacker gets a key from a unit, it would only last a short while.
-
-\newpage
-\appendix
-\section{Program Code}
-
-Sensor Code:
-\lstset{style=Cpp}
-\lstinputlisting{../Sensor/src/sensor.cpp}
-
-Reader Code:
-\lstset{style=Cpp}
-\lstinputlisting{../Reader/src/reader.cpp}
-
-Cryptographic Code:
-\lstset{style=Cpp}
-\lstinputlisting{../Sensor/src/crypt.cpp}
 
 \end{document}

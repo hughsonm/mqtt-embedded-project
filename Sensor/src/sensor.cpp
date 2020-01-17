@@ -9,11 +9,6 @@
 #include <openssl/aes.h>
 #include "crypt.h"
 
-
-const std::string broker_address{"130.179.196.54:1883"};
-const std::string keygen_filename{"/home/pi/aes_key_gen.txt"};
-const std::string raw_topic{"maxtopic/periodic/collatz"};
-
 class Sensor{
 	double ym2{0.0};
 	double ym1{0.0};
@@ -21,7 +16,7 @@ class Sensor{
 	double xm2{1.0};
 	int count{0};
 public:
-	double read_normalized_value();
+	double read_value();
 };
 
 double Sensor::read_value(){
@@ -37,21 +32,21 @@ double Sensor::read_value(){
 }
 
 
+const std::string broker_address{"130.179.196.54:1883"};
+const std::string keygen_filename{"/home/pi/aes_key_gen.txt"};
+const std::string raw_topic{"maxtopic/periodic/secret"};
+
 int main(int argc,char** argv){
 	
 	std::ifstream reader;
 	reader.open(keygen_filename,std::ifstream::in);
 	std::string keygen;
 	reader >> keygen;
-	reader.close();
-		
+	reader.close();		
 	const std::string enc_topic{
 		encrypt_topic_AES(keygen,"hughson",raw_topic)
 	};
-	
-	std::cout << enc_topic <<"\n";
-	
-	std::cout << "Running...\n"
+	std::cout << "Running...\n";
 	
 	std::cout << "Constructing client...\n";
 	mqtt::async_client cl(broker_address,"hpSensor");

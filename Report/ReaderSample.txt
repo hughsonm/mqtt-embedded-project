@@ -1,0 +1,52 @@
+pi@maxpi:~/Embedded/Project/Sensor $ ./build/apps/sensor
+Running...
+Constructing client...
+Client is currently not connnected.
+Connecting client
+Client is now connected
+Broadcasting on topic hughson/1198288193107892161194291892457610421782516615551721002435810418671179138411771
+Sending new reading:
+	Reading:    0.9
+	Encrypted:  118 221 250 166 50 224 205 194 53 167 81 186 95 233 73 1
+Sending new reading:
+	Reading:    1.54305
+	Encrypted:  81 31 199 77 26 0 156 184 88 121 61 26 187 14 248 72
+Sending new reading:
+	Reading:    1.83556
+	Encrypted:  242 175 131 193 89 241 109 136 100 95 52 167 11 50 77 183
+Sending new reading:
+	Reading:    1.75832
+	Encrypted:  125 16 8 8 29 254 93 143 39 141 154 7 55 118 147 125
+Sending new reading:
+	Reading:    1.36264
+	Encrypted:  248 102 234 124 171 245 58 10 42 68 166 93 101 215 192 47
+Sending new reading:
+	Reading:    0.753755
+	Encrypted:  212 106 228 217 120 108 252 149 227 111 44 240 216 223 216 235
+Sending new reading:
+	Reading:    0.0659376
+	Encrypted:  79 29 52 55 254 71 24 246 40 68 151 224 153 64 68 204
+Sending new reading:
+	Reading:    -0.565329
+	Encrypted:  90 233 157 72 135 232 251 211 245 86 103 221 102 102 109 163
+Sending new reading:
+	Reading:    -1.0286
+	Encrypted:  136 112 36 164 32 62 6 122 11 53 190 23 20 91 14 73
+Sending new reading:
+	Reading:    -1.25474
+	Encrypted:  98 81 96 161 96 179 224 119 108 23 250 88 116 94 12 27
+Sending new reading:
+	Reading:    -1.22551
+	Encrypted:  170 65 159 141 221 50 40 112 117 206 40 183 180 99 110 245
+Sending new reading:
+	Reading:    -0.971872
+	Encrypted:  6 149 95 247 224 66 18 146 133 80 39 41 246 118 59 52
+Sending new reading:
+	Reading:    -0.563315
+	Encrypted:  145 113 100 124 71 232 189 32 75 215 46 6 154 92 207 179
+Sending new reading:
+	Reading:    -0.0911191
+	Encrypted:  97 239 87 108 55 61 245 188 101 92 97 98 191 172 194 113
+Sending new reading:
+	Reading:    0.35076
+	Encrypted:  245 156 19 221 236 233 209 52 150 108 209 130 246 98 174 184
