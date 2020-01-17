@@ -151,7 +151,7 @@ The sensor is a digital resonator, which outputs a sampled, damped sinusoid. Eve
 \section{Reader Description}
 The reader sets up a client, and subscribes to the topic under which the sender publishes its information. The reader code is the following:
 \lstset{style=Cpp}
-\lstinputlisting[firstline=27,lastline=65]{../Reader/src/sensor.cpp}
+\lstinputlisting[firstline=27,lastline=65]{../Reader/src/reader.cpp}
 Messages are received asynchronously. When a message is received, the message is decrypted to get at the juicy information from the sensor.
 
 \section{Eclipse Paho Libraries}
@@ -182,7 +182,9 @@ Public key encryption would be unsuitable for a publish-and-subscribe model, suc
 
 Therefore, I decided to go with symmetric key encryption. Symmetric key encryption has the added benefit of being simpler to implement. Each device is programmed with the communication key. A data-thief would be unable to steal my data because the thief does not know my encryption key.
 
-In my system, the key is generated from a 32-character word, stored in a  text file, located at \texttt{/home/pi/aes\_key\_gen.txt}. 
+In my system, the key is generated from a 32-character word, stored in a  text file, located at:
+
+\texttt{/home/pi/aes\_key\_gen.txt}. 
 
 \subsection{Implementation}
 I used the \texttt{openssl} implementation of the \href{https://www.youtube.com/watch?v=O4xNJsjtN6E}{advanced encryption standard} (AES). This is a widely-used technology that enables fast symmetric key encryption.
@@ -197,9 +199,13 @@ In the AES algorithm, data are encrypted as a matrix of bytes. For my implementa
 	\item Repeat
 \end{enumerate}
 
-The input to my encryption machine is a string, and the output from my encryption machine is another string. AES only works on 128-bit chunks of data. I treat my strings as arrays of 8-bit characters.  In order to encrypt variable-length strings, I simply pad the strings with spaces, cut the string into 128-bit blocks, and encrypt each 128-bit block in parallel. In this form, the characters \emph{cannot} be cast back into a string, because their values are not related to ASCII representations of anything. Instead, I create a string from each encrypted byte (i.e. the number \texttt{123} becomes \textt{"123"}). Then, I join all those strings, separated by spaces, to produce the encrypted string. This is a naive method of performing large-scale AES encryption. A more secure method would be to encrypt in series, with the output from each step influencing the next step.
+The input to my encryption machine is a string, and the output from my encryption machine is another string. AES only works on 128-bit chunks of data. I treat my strings as arrays of 8-bit characters.  In order to encrypt variable-length strings, I simply pad the strings with spaces, cut the string into 128-bit blocks, and encrypt each 128-bit block in parallel. In this form, the characters \emph{cannot} be cast back into a string, because their values are not related to ASCII representations of anything. Instead, I create a string from each encrypted byte (i.e. the number \texttt{123} becomes \texttt{"123"}). Then, I join all those strings, separated by spaces, to produce the encrypted string. This is a naive method of performing large-scale AES encryption. A more secure method would be to encrypt in series, with the output from each step influencing the next step.
 
-My payloads and my topics are both encrypted. The payloads are obviously encrypted so that their information is hidden. The topics are encrypted because they could also carry important information about my messages. The technique for encrypting topics is slightly different from the technique described above. This is because I was running into trouble getting a simple sequence of integers to be a MQTT topic. The form of my MQTT topics is: \texttt{<plaintext prefix>/<encrypted topic with spaces removed>}. From my application code, my topic would be \texttt{hughson/1198288193107892161194291892457610421781451311711362472251261593215422920320414874158}. My encryption code is show below:
+My payloads and my topics are both encrypted. The payloads are obviously encrypted so that their information is hidden. The topics are encrypted because they could also carry important information about my messages. The technique for encrypting topics is slightly different from the technique described above. This is because I was running into trouble getting a simple sequence of integers to be a MQTT topic. The form of my MQTT topics is: \texttt{<plaintext prefix>/<encrypted topic with spaces removed>}. From my application code, my topic would be
+
+\texttt{hughson/1198288193107892161194291892457610421781451311711362472251261593215422920320414874158}.
+
+My encryption code is show below:
 \lstset{style=Cpp}
 \lstinputlisting{../Sensor/src/crypt.cpp}
 
@@ -215,10 +221,15 @@ Here are some terminal outputs taken while both the sensor and reader applicatio
 \lstset{style=None}
 \lstinputlisting{ReaderSample.txt}
 
-\subsection{Pitfalls}
+For anyone observing traffic on the broker, it looks like I'm transferring complete gibberish. Even the broker is unaware of my messages' contents.
+\subsection{Pitfalls and Improvements}
 
-This technique has a single point of failure: the shared encryption key. If a nefarious agent opens up the mqtt-thing and finds out the encryption key, then the whole system is compromised. If we communicate on a busy broker, then it may be difficult to know which messages are ours. If he has hacked into the box deep enough to find the key, then he probably also knows the topic names. This could possibly be prevented by using tamper-detection that kills any molested units. If a hacker manages to extract the key before the self-destruct engages, though, then he has the secret forever.
+My technique has a single point of failure: the shared encryption key. If a nefarious agent opens up the mqtt-thing and finds out the encryption key, then the whole system is compromised. If we communicate on a busy broker, then it may be difficult to for the nefarious hacker to know which messages are ours, however, if he has hacked into the box deep enough to find the key, then he probably also knows the topic names. This attack could possibly be prevented by using tamper-detection that kills any molested units. If a hacker manages to extract the key before the self-destruct engages, though, then he has the secret forever.
 
-A better way to do this would be to use occasional public key encryption to periodically update the shared encryption key. Occasionally, the key master could send out a directed message to \emph{every} unit that has left the factory, encrypted with the master's private key and the units' public keys, containing a new shared key. Then, even if a hacker gets a key from a unit, it would only last a short while.
+A better way to manage the encryption key would be to use occasional public key encryption to periodically update the shared encryption key. Such a technique would be possible if we had a client act as a key master. This master would need to know the public keys of all the other clients. This could be accomplished just by keeping track of the public keys of all the units that are manufactured. The key master could occasionally send out a directed message to \emph{every} unit, encrypted with the master's private key and the units' public keys, containing a new shared key. Then, even if a hacker gets a key from a unit, it would only last a short while.
+
+The AES encryption could be improved by performing serial, order-dependent encryption of each message's blocks, as opposed to the parallel encryption I have implemented. 
+
+Clearly, getting security and encryption right is a difficult task. This project has made me even more thankful that there are smart people out there who care about data security, and have the skills to do something about it.
 
 \end{document}
